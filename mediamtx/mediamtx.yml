@@ -1,0 +1,29 @@
+logLevel: info
+logDestinations: [stdout]
+
+rtmp: yes
+rtmpAddress: :1935
+
+hls: yes
+hlsAddress: :8888
+hlsAlwaysRemux: yes
+hlsVariant: mpegts
+hlsSegmentCount: 7
+hlsSegmentDuration: 2s
+hlsAllowOrigin: '*'
+
+# Disable unused protocols to minimize attack surface
+rtsp: no
+webrtc: no
+srt: no
+
+# Authentication via Spring Boot backend
+authMethod: http
+authHTTPAddress: http://backend:8080/api/internal/mediamtx/auth
+
+# Internal Control API (exposed only on Docker private network)
+api: yes
+apiAddress: :9997
+
+paths:
+  all_others:
