@@ -30,13 +30,16 @@ public class BrowserBroadcastController {
     private final StreamService streams;
     private final PublishingPaths publishingPaths;
     private final JwtTokenProvider tokens;
+    private final StreamControlService streamControlService;
     private final RestClient whip;
 
     public BrowserBroadcastController(StreamService streams, PublishingPaths publishingPaths, JwtTokenProvider tokens,
+                                      StreamControlService streamControlService,
                                       @Value("${MEDIAMTX_WEBRTC_URL:http://mediamtx:8889}") String whipUrl) {
         this.streams = streams;
         this.publishingPaths = publishingPaths;
         this.tokens = tokens;
+        this.streamControlService = streamControlService;
         var factory = new SimpleClientHttpRequestFactory();
         factory.setConnectTimeout(2_000);
         factory.setReadTimeout(10_000);
@@ -48,6 +51,9 @@ public class BrowserBroadcastController {
         String streamId = streams.findStreamByIdOrStreamId(id).getStreamId();
         if (offer.length() > 65_536 || !offer.startsWith("v=0")) {
             throw new BadRequestException("Invalid WebRTC offer");
+        }
+        if (streamControlService.isLocked(streamId)) {
+            throw new ResponseStatusException(HttpStatus.LOCKED, "Publishing is locked by an administrator");
         }
         if (publishingPaths.ready().contains(streamId)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "The main feed already has a publisher");

@@ -61,7 +61,7 @@ class MediaMtxMonitorTest {
 
         // Poll 1 & 2: MediaMTX reports stream is ready -> transitions LIVE once
         List<MediaMtxPathResponse.PathItem> livePaths = List.of(
-                new MediaMtxPathResponse.PathItem("live/monitor-test-stream", true, "2026-11-14T00:00:00Z", 1024L)
+                new MediaMtxPathResponse.PathItem("live/monitor-test-stream", true, "2026-11-14T00:00:00Z", 1024L, 0L, null, List.of(), List.of())
         );
         when(mediaMtxClient.listPaths()).thenReturn(Optional.of(livePaths));
 
@@ -99,8 +99,8 @@ class MediaMtxMonitorTest {
         var wide = cameraService.add(id, new StreamViews.CameraRequest("Wide"));
         var close = cameraService.add(id, new StreamViews.CameraRequest("Close"));
         cameraService.selectDirector(id, wide.cameraId());
-        var widePath = new MediaMtxPathResponse.PathItem("live/" + wide.publishingPath(), true, null, 0L);
-        var closePath = new MediaMtxPathResponse.PathItem("live/" + close.publishingPath(), true, null, 0L);
+        var widePath = new MediaMtxPathResponse.PathItem("live/" + wide.publishingPath(), true, null, 0L, 0L, null, List.of(), List.of());
+        var closePath = new MediaMtxPathResponse.PathItem("live/" + close.publishingPath(), true, null, 0L, 0L, null, List.of(), List.of());
 
         when(mediaMtxClient.listPaths()).thenReturn(Optional.of(List.of(widePath, closePath)));
         mediaMtxMonitor.pollMediaMtx();

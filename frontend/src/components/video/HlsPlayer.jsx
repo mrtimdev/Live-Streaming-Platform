@@ -1,19 +1,31 @@
 import Hls from 'hls.js';
-import { AlertCircle, Loader2, RefreshCw } from 'lucide-react';
+import { AlertCircle, Loader2, RefreshCw, Scan, VolumeX } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import { useYoloDetection } from '../../hooks/useYoloDetection';
+import { AI_MODES } from '../../utils/cocoClasses';
 import PlayerControls from './PlayerControls';
 
-export default function HlsPlayer({ src, title }) {
+export default function HlsPlayer({ src, title, defaultMuted = false }) {
   const containerRef = useRef(null);
   const videoRef = useRef(null);
+  const overlayRef = useRef(null);
   const hlsRef = useRef(null);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [playing, setPlaying] = useState(false);
-  const [muted, setMuted] = useState(false);
+  const [muted, setMuted] = useState(defaultMuted);
   const [volume, setVolume] = useState(1);
   const [retryToken, setRetryToken] = useState(0);
+  const [aiMode, setAiMode] = useState('off');
+
+  const { status: aiStatus, summary: aiSummary, error: aiError } = useYoloDetection(
+    videoRef,
+    overlayRef,
+    error ? 'off' : aiMode,
+    playing
+  );
+  const activeModeLabel = AI_MODES.find((m) => m.id === aiMode)?.label || 'YOLO11';
 
   useEffect(() => {
     const video = videoRef.current;
@@ -49,26 +61,6 @@ export default function HlsPlayer({ src, title }) {
         video.play().catch(() => {});
       });
     };
-
-    if (video.canPlayType('application/vnd.apple.mpegurl')) {
-      video.src = src;
-      const onNativeError = () => {
-        setLoading(false);
-        setError('Unable to load the live video stream.');
-      };
-      video.addEventListener('error', onNativeError);
-      attemptAutoPlay();
-
-      return () => {
-        video.removeEventListener('canplay', handleCanPlay);
-        video.removeEventListener('playing', handlePlaying);
-        video.removeEventListener('pause', handlePause);
-        video.removeEventListener('waiting', handleWaiting);
-        video.removeEventListener('error', onNativeError);
-        video.removeAttribute('src');
-        video.load();
-      };
-    }
 
     if (Hls.isSupported()) {
       hls = new Hls({
@@ -116,6 +108,26 @@ export default function HlsPlayer({ src, title }) {
       };
     }
 
+    if (video.canPlayType('application/vnd.apple.mpegurl')) {
+      video.src = src;
+      const onNativeError = () => {
+        setLoading(false);
+        setError('Unable to load the live video stream.');
+      };
+      video.addEventListener('error', onNativeError);
+      attemptAutoPlay();
+
+      return () => {
+        video.removeEventListener('canplay', handleCanPlay);
+        video.removeEventListener('playing', handlePlaying);
+        video.removeEventListener('pause', handlePause);
+        video.removeEventListener('waiting', handleWaiting);
+        video.removeEventListener('error', onNativeError);
+        video.removeAttribute('src');
+        video.load();
+      };
+    }
+
     setLoading(false);
     setError('Your browser does not support HLS video playback.');
     return undefined;
@@ -134,8 +146,13 @@ export default function HlsPlayer({ src, title }) {
   const toggleMute = () => {
     const video = videoRef.current;
     if (!video) return;
-    video.muted = !video.muted;
-    setMuted(video.muted);
+    const nextMuted = !video.muted;
+    video.muted = nextMuted;
+    if (!nextMuted && video.volume === 0) {
+      video.volume = 1;
+      setVolume(1);
+    }
+    setMuted(nextMuted);
   };
 
   const handleVolumeChange = (val) => {
@@ -165,10 +182,30 @@ export default function HlsPlayer({ src, title }) {
       <video
         ref={videoRef}
         className="h-full w-full object-contain"
+        muted={muted}
         playsInline
         aria-label={title || 'Live stream player'}
         onClick={togglePlay}
       />
+
+      <canvas
+        ref={overlayRef}
+        className="pointer-events-none absolute inset-0 h-full w-full"
+        aria-hidden="true"
+      />
+
+      {aiMode !== 'off' && !error && (
+        <div className="pointer-events-none absolute right-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-black/75 px-3 py-1.5 text-xs font-medium text-white backdrop-blur">
+          <Scan className="h-3.5 w-3.5 text-indigo-400" />
+          {aiStatus === 'loading' && `Loading YOLO11 ${activeModeLabel}…`}
+          {aiStatus === 'active' && (
+            aiMode === 'classify'
+              ? `YOLO11 Classify · ${aiSummary.topLabel || 'scanning'} · ${aiSummary.inferenceMs}ms`
+              : `YOLO11 ${activeModeLabel} · ${aiSummary.count} ${aiSummary.count === 1 ? 'object' : 'objects'} · ${aiSummary.inferenceMs}ms`
+          )}
+          {aiStatus === 'error' && (aiError || 'YOLO11 unavailable')}
+        </div>
+      )}
 
       {loading && !error && (
         <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center bg-black/50 text-slate-200">
@@ -192,12 +229,25 @@ export default function HlsPlayer({ src, title }) {
         </div>
       )}
 
+      {muted && playing && !error && (
+        <button
+          type="button"
+          onClick={toggleMute}
+          className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-black/75 px-3 py-1.5 text-xs font-medium text-white backdrop-blur transition hover:bg-black/90"
+        >
+          <VolumeX className="h-3.5 w-3.5 text-amber-400" />
+          Click to unmute
+        </button>
+      )}
+
       {!error && (
         <div className="absolute inset-x-0 bottom-0 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
           <PlayerControls
             playing={playing}
             muted={muted}
             volume={volume}
+            aiMode={aiMode}
+            onChangeAiMode={setAiMode}
             onTogglePlay={togglePlay}
             onToggleMute={toggleMute}
             onVolumeChange={handleVolumeChange}

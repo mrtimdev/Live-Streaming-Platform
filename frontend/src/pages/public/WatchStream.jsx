@@ -1,3 +1,4 @@
+import StreamCountdown from '../../components/stream/StreamCountdown';
 import { ArrowLeft, Clock, Eye, Radio } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
@@ -7,7 +8,7 @@ import StreamStatusBadge from '../../components/stream/StreamStatusBadge';
 import HlsPlayer from '../../components/video/HlsPlayer';
 import { useStreamStatus } from '../../hooks/useStreamStatus';
 import { useViewerHeartbeat } from '../../hooks/useViewerHeartbeat';
-import { formatDuration, getLiveDurationSeconds } from '../../utils/formatters';
+import { formatDateTime, formatDuration, getLiveDurationSeconds } from '../../utils/formatters';
 import StreamNotFound from './StreamNotFound';
 
 export default function WatchStream() {
@@ -90,6 +91,8 @@ export default function WatchStream() {
         </p>
       )}
 
+      <StreamCountdown scheduledStartAt={stream.scheduledStartAt} isLive={isLive} />
+
       {isLive ? (
         <HlsPlayer key={hlsUrl} src={hlsUrl} title={selectedCamera?.live ? selectedCamera.label : stream.title} />
       ) : (
@@ -128,10 +131,18 @@ export default function WatchStream() {
             </div>
 
             {isLive && (
-              <div className="flex items-center gap-2 rounded-lg border border-slate-800 bg-slate-950 px-3.5 py-2 text-sm">
-                <Clock className="h-4 w-4 text-emerald-400" />
-                <span className="font-mono text-slate-200">{formatDuration(liveDuration)}</span>
-              </div>
+              <>
+                {stream.startedAt && (
+                  <div className="flex items-center gap-2 rounded-lg border border-slate-800 bg-slate-950 px-3.5 py-2 text-sm">
+                    <span className="text-slate-400">Live started</span>
+                    <span className="text-slate-200">{formatDateTime(stream.startedAt)}</span>
+                  </div>
+                )}
+                <div className="flex items-center gap-2 rounded-lg border border-slate-800 bg-slate-950 px-3.5 py-2 text-sm">
+                  <Clock className="h-4 w-4 text-emerald-400" />
+                  <span className="font-mono text-slate-200">{formatDuration(liveDuration)}</span>
+                </div>
+              </>
             )}
           </div>
         </div>

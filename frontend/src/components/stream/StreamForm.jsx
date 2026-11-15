@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { toLocalDateTime } from './schedule';
 
 export default function StreamForm({
   initialValues = { title: '', description: '', thumbnailUrl: '', streamId: '' },
@@ -6,6 +7,7 @@ export default function StreamForm({
   submitting = false,
   onSubmit,
 }) {
+  const [scheduledStartAt, setScheduledStartAt] = useState(toLocalDateTime(initialValues.scheduledStartAt));
   const [title, setTitle] = useState(initialValues.title || '');
   const [description, setDescription] = useState(initialValues.description || '');
   const [thumbnailUrl, setThumbnailUrl] = useState(initialValues.thumbnailUrl || '');
@@ -15,6 +17,7 @@ export default function StreamForm({
     e.preventDefault();
     const payload = {
       title: title.trim(),
+      scheduledStartAt: scheduledStartAt ? new Date(scheduledStartAt).toISOString() : null,
       description: description.trim() || null,
       thumbnailUrl: thumbnailUrl.trim() || null,
     };
@@ -86,6 +89,13 @@ export default function StreamForm({
         />
       </div>
 
+      <div>
+        <label htmlFor="scheduled-start" className="block text-sm font-medium text-slate-200">Scheduled start date & time (optional)</label>
+        <input id="scheduled-start" type="datetime-local" value={scheduledStartAt}
+          onChange={(event) => setScheduledStartAt(event.target.value)}
+          className="mt-1.5 w-full rounded-lg border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-sm text-white" />
+        <p className="mt-1 text-xs text-slate-400">Your timezone: {Intl.DateTimeFormat().resolvedOptions().timeZone}. Viewers see a countdown in their local time. Start the camera or OBS manually. Clear this field to remove the schedule.</p>
+      </div>
       <div className="pt-2">
         <button
           type="submit"

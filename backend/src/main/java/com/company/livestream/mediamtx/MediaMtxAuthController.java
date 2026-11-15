@@ -34,17 +34,20 @@ public class MediaMtxAuthController {
     private final StreamCameraRepository cameraRepository;
     private final MediaMtxClient mediaMtxClient;
     private final JwtTokenProvider tokens;
+    private final StreamControlService streamControlService;
 
     public MediaMtxAuthController(StreamRepository streamRepository,
                                   StreamCameraRepository cameraRepository,
                                   StreamKeyService streamKeyService,
                                   MediaMtxClient mediaMtxClient,
-                                  JwtTokenProvider tokens) {
+                                  JwtTokenProvider tokens,
+                                  StreamControlService streamControlService) {
         this.streamRepository = streamRepository;
         this.cameraRepository = cameraRepository;
         this.streamKeyService = streamKeyService;
         this.mediaMtxClient = mediaMtxClient;
         this.tokens = tokens;
+        this.streamControlService = streamControlService;
     }
 
     @PostMapping("/auth")
@@ -84,6 +87,10 @@ public class MediaMtxAuthController {
             }
 
             LiveStream stream = streamOpt.get();
+            if (streamControlService.isLocked(streamId)) {
+                log.warn("Rejected publish for locked streamId={} ip={}", streamId, request.ip());
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
             if ("webrtc".equals(request.protocol())) {
                 boolean allowed = parts.length == 1 && "browser".equals(request.user())
                         && tokens.allowsBrowserPublish(rawKey, path);

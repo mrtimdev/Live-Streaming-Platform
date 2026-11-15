@@ -1,3 +1,4 @@
+import StreamCountdown from '../../components/stream/StreamCountdown';
 import { ArrowLeft, Clock, ExternalLink, Eye, KeyRound, Pencil, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
@@ -5,9 +6,11 @@ import { streamApi } from '../../api/streamApi';
 import ConfirmModal from '../../components/common/ConfirmModal';
 import CopyButton from '../../components/common/CopyButton';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
+import AdminStreamControl from '../../components/stream/AdminStreamControl';
 import BrowserBroadcast from '../../components/stream/BrowserBroadcast';
 import CameraSettings from '../../components/stream/CameraSettings';
 import ObsConfigPanel from '../../components/stream/ObsConfigPanel';
+import StreamControlPanel from '../../components/stream/StreamControlPanel';
 import StreamForm from '../../components/stream/StreamForm';
 import StreamStatusBadge from '../../components/stream/StreamStatusBadge';
 import { formatDateTime, formatDuration, getLiveDurationSeconds } from '../../utils/formatters';
@@ -198,7 +201,10 @@ export default function StreamDetails() {
 
       {newCredentials && <ObsConfigPanel credentials={newCredentials} />}
 
+      <StreamCountdown scheduledStartAt={stream.scheduledStartAt} isLive={stream.status === 'LIVE'} />
+      <StreamControlPanel key={`control-${stream.streamId}`} stream={stream} />
       <BrowserBroadcast key={`browser-${stream.streamId}`} streamId={stream.streamId} programLive={programLive} />
+      <AdminStreamControl key={`controls-${stream.streamId}`} streamId={stream.streamId} />
       <CameraSettings key={stream.streamId} streamId={stream.streamId} />
 
       <div className="grid gap-4 sm:grid-cols-3">

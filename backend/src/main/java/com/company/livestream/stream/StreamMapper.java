@@ -26,7 +26,8 @@ public class StreamMapper {
                 stream.getEndedAt(),
                 viewerCount,
                 normalizeBase(rtmpPublicUrl),
-                buildHlsUrl(stream.getStreamId())
+                buildHlsUrl(stream.getStreamId()),
+                stream.getScheduledStartAt()
         );
     }
 
@@ -41,6 +42,7 @@ public class StreamMapper {
                 viewerCount,
                 views.directorFeed().hlsUrl(),
                 stream.getStartedAt(),
+                stream.getScheduledStartAt(),
                 views
         );
     }

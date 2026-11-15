@@ -15,7 +15,25 @@ public record MediaMtxPathResponse(
             String name,
             boolean ready,
             String readyTime,
-            long bytesReceived
+            long bytesReceived,
+            long bytesSent,
+            Source source,
+            List<String> tracks,
+            List<Reader> readers
+    ) {
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record Source(
+            String type,
+            String id
+    ) {
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record Reader(
+            String type,
+            String id
     ) {
     }
 }

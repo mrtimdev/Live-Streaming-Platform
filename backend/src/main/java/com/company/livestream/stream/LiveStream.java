@@ -47,6 +47,13 @@ public class LiveStream extends BaseEntity {
     @Column(name = "started_at")
     private LocalDateTime startedAt;
 
+    @Column(name = "scheduled_start_at")
+    private java.time.Instant scheduledStartAt;
+
+    public java.time.Instant getScheduledStartAt() { return scheduledStartAt; }
+
+    public void setScheduledStartAt(java.time.Instant value) { scheduledStartAt = value; }
+
     @Column(name = "ended_at")
     private LocalDateTime endedAt;
 

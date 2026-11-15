@@ -2,6 +2,7 @@ package com.company.livestream.stream;
 
 import com.company.livestream.common.ApiResponse;
 import com.company.livestream.history.StreamHistory;
+import com.company.livestream.mediamtx.StreamControlService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/streams")
@@ -27,9 +29,11 @@ import java.util.List;
 public class StreamController {
 
     private final StreamService streamService;
+    private final StreamControlService streamControlService;
 
-    public StreamController(StreamService streamService) {
+    public StreamController(StreamService streamService, StreamControlService streamControlService) {
         this.streamService = streamService;
+        this.streamControlService = streamControlService;
     }
 
     @PostMapping
@@ -84,5 +88,33 @@ public class StreamController {
     @GetMapping("/{id}/history")
     public ResponseEntity<ApiResponse<List<StreamHistory>>> getStreamHistory(@PathVariable String id) {
         return ResponseEntity.ok(ApiResponse.ok(streamService.getStreamHistory(id)));
+    }
+
+    @GetMapping("/{id}/health")
+    public ResponseEntity<ApiResponse<StreamControlService.StreamHealthResponse>> getStreamHealth(@PathVariable String id) {
+        String streamId = streamService.findStreamByIdOrStreamId(id).getStreamId();
+        return ResponseEntity.ok(ApiResponse.ok(streamControlService.getHealth(streamId)));
+    }
+
+    @PutMapping("/{id}/lock")
+    public ResponseEntity<ApiResponse<Map<String, Boolean>>> setStreamLock(
+            @PathVariable String id,
+            @RequestBody Map<String, Boolean> body,
+            @AuthenticationPrincipal UserDetails principal) {
+        String streamId = streamService.findStreamByIdOrStreamId(id).getStreamId();
+        boolean locked = Boolean.TRUE.equals(body != null ? body.get("locked") : null);
+        streamControlService.setLocked(streamId, locked, principal.getUsername());
+        return ResponseEntity.ok(ApiResponse.ok(locked ? "Stream locked" : "Stream unlocked", Map.of("locked", locked)));
+    }
+
+    @PostMapping("/{id}/disconnect")
+    public ResponseEntity<ApiResponse<Void>> disconnectPublisher(
+            @PathVariable String id,
+            @RequestParam(required = false) String cameraId,
+            @RequestParam String sourceId,
+            @AuthenticationPrincipal UserDetails principal) {
+        String streamId = streamService.findStreamByIdOrStreamId(id).getStreamId();
+        streamControlService.disconnect(streamId, cameraId, sourceId, principal.getUsername());
+        return ResponseEntity.ok(ApiResponse.ok("Publisher disconnected", null));
     }
 }

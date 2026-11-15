@@ -47,8 +47,8 @@ A self-hosted Live Streaming Platform built with **Spring Boot**, **React + Vite
 
 1. Stop any publisher using the broadcast's main feed.
 2. Open **Admin → Streams**, choose a broadcast, and click **Preview camera** under **Broadcast from this browser**.
-3. Allow camera access in Chrome and macOS if prompted. Check the preview, then click **Go live**.
-4. Open **Watch Page** to verify playback. Keep the broadcasting tab open and click **Stop broadcast** when finished. This mode publishes video only.
+3. Allow camera and microphone access in Chrome and macOS if prompted. Check the preview, then click **Go live**.
+4. Open **Watch Page** to verify playback with audio. Keep the broadcasting tab open and click **Stop broadcast** when finished.
 
 The camera publishes to the existing main feed. Select **OBS program** in **Camera feeds** if the director's view is currently set to another live camera. Browser publishing uses H.264 over WebRTC. Use Chrome on `localhost` for local testing.
 
@@ -76,6 +76,25 @@ docker compose -f docker-compose.yml -f docker-compose.public.yml stop public-tu
 ```
 
 Keep the Mac awake, Docker running, and the broadcaster tab open. The link changes when a new tunnel is created. Cloudflare Quick Tunnels are for testing, have no uptime guarantee, and allow at most 200 concurrent in-flight requests (not 200 viewers). For a permanent audience, use an always-on host and a stable domain with delivery capacity sized for the audience. See [Cloudflare Quick Tunnel limits](https://developers.cloudflare.com/tunnel/get-started/quick-tunnels/).
+
+## Scheduled start and countdown
+
+In **Create Stream** or **Stream Details → Edit**, set **Scheduled start date & time** and save. The input uses your browser's timezone (shown below the field), and the server stores an absolute UTC time. The admin details and public watch page show the scheduled date/time and a live countdown while offline. The watch page refreshes schedule changes through its existing polling.
+
+At the scheduled time, viewers see “Waiting for the broadcaster to go live.” The schedule does not start a camera, block an early broadcast, or change stream status. Start your camera or OBS as usual; live playback replaces the offline screen. Clear the date field and save to remove a schedule. The actual broadcast start time remains separate.
+
+## Admin preview, devices, and publisher controls
+
+Open a broadcast in **Admin → Streams**:
+
+- **Broadcast from this browser** lets you select a camera and microphone, or choose **No microphone**. Allow permission, preview, and use the microphone level meter before going live. Device labels become available after permission. Close the preview or stop the broadcast before selecting different devices; mute/unmute works during a broadcast.
+- **Live preview & stream health → Show admin preview** plays the director's current feed, muted by default. Enable audio only when needed to avoid feedback. The preview uses HLS and has playback delay; hide it to save bandwidth.
+- Health updates every three seconds with codecs, publisher type, start time, received bytes, and incoming bitrate estimated between samples. Media connections are not the audience count. FPS and resolution are not exposed by this MediaMTX path API.
+- **Disconnect publisher** stops only the selected feed after confirmation. Other cameras keep running. The action rejects stale session IDs so a newer publisher is not accidentally stopped. OBS can reconnect automatically; disconnecting does not revoke a key or lock publishing.
+
+These controls require an administrator. The temporary public tunnel blocks their API routes. If health polling fails, the panel reports the failure instead of pretending the stream is offline.
+
+Browser audio uses Opus and the HLS output uses fragmented MP4. Device/microphone behavior still depends on browser permission and hardware support. Run frontend calculation tests with `cd frontend && npm test`; backend tests include control authorization and publisher isolation.
 
 ## OBS Studio Setup
 

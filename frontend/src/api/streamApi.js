@@ -62,6 +62,20 @@ export const streamApi = {
     const res = await api.put(`/streams/${encodeURIComponent(id)}/director`, { cameraId });
     return res.data.data;
   },
+  getStreamHealth: async (id) => {
+    const res = await api.get(`/streams/${encodeURIComponent(id)}/health`);
+    return res.data.data;
+  },
+  setStreamLock: async (id, locked) => {
+    const res = await api.put(`/streams/${encodeURIComponent(id)}/lock`, { locked });
+    return res.data.data;
+  },
+  disconnectPublisher: async (id, sourceId, cameraId) => {
+    const res = await api.post(`/streams/${encodeURIComponent(id)}/disconnect`, null, {
+      params: { sourceId, ...(cameraId ? { cameraId } : {}) },
+    });
+    return res.data.data;
+  },
 
   // Analytics
   getDashboardAnalytics: async () => {

@@ -53,6 +53,9 @@ class StreamPlatformIntegrationTest {
     @MockitoBean
     private StringRedisTemplate redisTemplate;
 
+    @MockitoBean
+    private com.company.livestream.mediamtx.MediaMtxClient mediaMtxClient;
+
     private String adminToken;
     private String regularUserToken;
 
@@ -112,7 +115,8 @@ class StreamPlatformIntegrationTest {
                 "Keynote Broadcast",
                 "Annual engineering keynote",
                 null,
-                "keynote-2026"
+                "keynote-2026",
+                null
         );
 
         MvcResult createResult = mockMvc.perform(post("/api/streams")
@@ -189,6 +193,42 @@ class StreamPlatformIntegrationTest {
                 .andExpect(status().isOk());
 
         assertThat(rawKey).isNotBlank();
+    }
+
+    @Test
+    void streamControlsRequireAdmin() throws Exception {
+        for (String endpoint : new String[]{"health", "disconnect"}) {
+            var anonymous = endpoint.equals("health") ? get("/api/streams/test/control/health")
+                    : post("/api/streams/test/control/disconnect").contentType(MediaType.APPLICATION_JSON).content("{\"sourceId\":\"test\"}");
+            mockMvc.perform(anonymous).andExpect(status().isUnauthorized());
+            mockMvc.perform(anonymous.header("Authorization", "Bearer " + regularUserToken))
+                    .andExpect(status().isForbidden());
+        }
+    }
+
+    @Test
+    void schedulePersistsAsAnInstantAndCanBeUpdatedOrCleared() throws Exception {
+        String path = "/api/streams/scheduled-test";
+        mockMvc.perform(post("/api/streams").header("Authorization", "Bearer " + adminToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"title\":\"Scheduled\",\"streamId\":\"scheduled-test\",\"scheduledStartAt\":\"2027-01-01T19:00:00+07:00\"}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.stream.scheduledStartAt").value("2027-01-01T12:00:00Z"));
+        mockMvc.perform(get("/api/public/streams/scheduled-test"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.scheduledStartAt").value("2027-01-01T12:00:00Z"))
+                .andExpect(jsonPath("$.data.status").value("OFFLINE"));
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put(path)
+                .header("Authorization", "Bearer " + adminToken).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"title\":\"Scheduled\",\"scheduledStartAt\":\"2027-01-02T12:00:00Z\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.scheduledStartAt").value("2027-01-02T12:00:00Z"));
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put(path)
+                .header("Authorization", "Bearer " + adminToken).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"title\":\"Scheduled\",\"scheduledStartAt\":null}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.scheduledStartAt").isEmpty());
+        mockMvc.perform(delete(path).header("Authorization", "Bearer " + adminToken)).andExpect(status().isOk());
     }
 
     @Test

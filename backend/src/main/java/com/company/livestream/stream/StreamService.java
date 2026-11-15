@@ -78,6 +78,7 @@ public class StreamService {
 
         LiveStream stream = new LiveStream();
         stream.setTitle(request.title().trim());
+        stream.setScheduledStartAt(request.scheduledStartAt());
         stream.setDescription(request.description() != null ? request.description().trim() : null);
         stream.setThumbnailUrl(request.thumbnailUrl() != null && !request.thumbnailUrl().isBlank()
                 ? request.thumbnailUrl().trim() : null);
@@ -129,6 +130,7 @@ public class StreamService {
                                                   String adminUsername) {
         LiveStream stream = findStreamByIdOrStreamId(idOrStreamId);
         stream.setTitle(request.title().trim());
+        stream.setScheduledStartAt(request.scheduledStartAt());
         stream.setDescription(request.description() != null ? request.description().trim() : null);
         stream.setThumbnailUrl(request.thumbnailUrl() != null && !request.thumbnailUrl().isBlank()
                 ? request.thumbnailUrl().trim() : null);

@@ -1,9 +1,12 @@
-import { Maximize, Pause, Play, Volume2, VolumeX } from 'lucide-react';
+import { Maximize, Pause, Play, Scan, Volume2, VolumeX } from 'lucide-react';
+import { AI_MODES } from '../../utils/cocoClasses';
 
 export default function PlayerControls({
   playing,
   muted,
   volume,
+  aiMode,
+  onChangeAiMode,
   onTogglePlay,
   onToggleMute,
   onVolumeChange,
@@ -52,14 +55,38 @@ export default function PlayerControls({
         </span>
       </div>
 
-      <button
-        type="button"
-        onClick={onFullscreen}
-        className="rounded-lg p-1.5 transition hover:bg-white/15"
-        aria-label="Fullscreen"
-      >
-        <Maximize className="h-5 w-5" />
-      </button>
+      <div className="flex items-center gap-2">
+        {onChangeAiMode && (
+          <label className={`inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium transition ${
+            aiMode && aiMode !== 'off'
+              ? 'bg-indigo-600 text-white'
+              : 'bg-white/10 text-slate-200 hover:bg-white/20'
+          }`}>
+            <Scan className="h-3.5 w-3.5 shrink-0" />
+            <select
+              value={aiMode || 'off'}
+              onChange={(e) => onChangeAiMode(e.target.value)}
+              aria-label="YOLO11 AI mode"
+              className="cursor-pointer bg-transparent text-xs font-medium text-white focus:outline-none"
+            >
+              {AI_MODES.map((m) => (
+                <option key={m.id} value={m.id} className="bg-slate-900 text-white">
+                  {m.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+
+        <button
+          type="button"
+          onClick={onFullscreen}
+          className="rounded-lg p-1.5 transition hover:bg-white/15"
+          aria-label="Fullscreen"
+        >
+          <Maximize className="h-5 w-5" />
+        </button>
+      </div>
     </div>
   );
 }

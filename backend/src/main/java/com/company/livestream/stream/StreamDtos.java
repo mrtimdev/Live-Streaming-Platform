@@ -5,6 +5,7 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 import java.time.LocalDateTime;
+import java.time.Instant;
 
 public final class StreamDtos {
 
@@ -23,7 +24,8 @@ public final class StreamDtos {
             String thumbnailUrl,
 
             @Pattern(regexp = "^[a-zA-Z0-9_-]{3,64}$", message = "Stream ID must be 3-64 alphanumeric, dash, or underscore characters")
-            String streamId
+            String streamId,
+            Instant scheduledStartAt
     ) {
     }
 
@@ -36,7 +38,8 @@ public final class StreamDtos {
             String description,
 
             @Size(max = 500, message = "Thumbnail URL must be at most 500 characters")
-            String thumbnailUrl
+            String thumbnailUrl,
+            Instant scheduledStartAt
     ) {
     }
 
@@ -53,7 +56,8 @@ public final class StreamDtos {
             LocalDateTime endedAt,
             long viewerCount,
             String rtmpUrl,
-            String hlsUrl
+            String hlsUrl,
+            Instant scheduledStartAt
     ) {
     }
 
@@ -75,6 +79,7 @@ public final class StreamDtos {
             long viewerCount,
             String hlsUrl,
             LocalDateTime startedAt,
+            Instant scheduledStartAt,
             StreamViews views
     ) {
     }
