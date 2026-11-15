@@ -42,6 +42,9 @@ services:
     ports:
       - "1935:1935"
       - "8888:8888"
+      - "${MEDIAMTX_WEBRTC_BIND_IP:-127.0.0.1}:8189:8189/udp"
+    environment:
+      MTX_WEBRTCADDITIONALHOSTS: ${MEDIAMTX_WEBRTC_HOST:-127.0.0.1}
     volumes:
       - ./mediamtx/mediamtx.yml:/mediamtx.yml:ro
     networks:
@@ -77,8 +80,9 @@ services:
       APP_ADMIN_EMAIL: ${APP_ADMIN_EMAIL:-admin@livestream.local}
       APP_PUBLIC_URL: ${APP_PUBLIC_URL:-http://localhost:3000}
       MEDIAMTX_API_URL: ${MEDIAMTX_API_URL:-http://mediamtx:9997}
+      MEDIAMTX_WEBRTC_URL: http://mediamtx:8889
       MEDIAMTX_RTMP_PUBLIC_URL: ${MEDIAMTX_RTMP_PUBLIC_URL:-rtmp://localhost:1935/live}
-      MEDIAMTX_HLS_PUBLIC_URL: ${MEDIAMTX_HLS_PUBLIC_URL:-http://localhost:8888/live}
+      MEDIAMTX_HLS_PUBLIC_URL: ${MEDIAMTX_HLS_PUBLIC_URL:-/hls/live}
     networks:
       - livestream_internal
     healthcheck:

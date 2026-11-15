@@ -12,9 +12,13 @@ hlsSegmentCount: 7
 hlsSegmentDuration: 2s
 hlsAllowOrigin: '*'
 
-# Disable unused protocols to minimize attack surface
+webrtc: yes
+webrtcAddress: :8889
+webrtcLocalUDPAddress: :8189
+webrtcIPsFromInterfaces: no
+
+# Disable unused protocols
 rtsp: no
-webrtc: no
 srt: no
 
 # Authentication via Spring Boot backend
@@ -27,3 +31,4 @@ apiAddress: :9997
 
 paths:
   all_others:
+    overridePublisher: no

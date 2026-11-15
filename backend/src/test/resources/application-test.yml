@@ -16,5 +16,5 @@ app:
   mediamtx:
     api-url: http://localhost:19997
     rtmp-public-url: rtmp://localhost:1935/live
-    hls-public-url: http://localhost:8888/live
+    hls-public-url: /hls/live
     monitor-interval-ms: 600000

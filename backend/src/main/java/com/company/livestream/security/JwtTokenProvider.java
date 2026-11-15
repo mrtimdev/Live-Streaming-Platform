@@ -66,6 +66,24 @@ public class JwtTokenProvider {
                 .compact();
     }
 
+    public String generateBrowserPublishToken(String path) {
+        return Jwts.builder()
+                .subject(path)
+                .claim("type", "browser-publish")
+                .expiration(new Date(System.currentTimeMillis() + 30_000))
+                .signWith(signingKey)
+                .compact();
+    }
+
+    public boolean allowsBrowserPublish(String token, String path) {
+        try {
+            Claims claims = parseClaims(token);
+            return "browser-publish".equals(claims.get("type")) && path.equals(claims.getSubject());
+        } catch (JwtException | IllegalArgumentException ex) {
+            return false;
+        }
+    }
+
     public String getUsernameFromToken(String token) {
         return parseClaims(token).getSubject();
     }

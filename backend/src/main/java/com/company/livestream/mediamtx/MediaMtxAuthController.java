@@ -1,6 +1,7 @@
 package com.company.livestream.mediamtx;
 
 import com.company.livestream.common.ApiResponse;
+import com.company.livestream.security.JwtTokenProvider;
 import com.company.livestream.stream.LiveStream;
 import com.company.livestream.stream.StreamCamera;
 import com.company.livestream.stream.StreamCameraRepository;
@@ -32,15 +33,18 @@ public class MediaMtxAuthController {
     private final StreamKeyService streamKeyService;
     private final StreamCameraRepository cameraRepository;
     private final MediaMtxClient mediaMtxClient;
+    private final JwtTokenProvider tokens;
 
     public MediaMtxAuthController(StreamRepository streamRepository,
                                   StreamCameraRepository cameraRepository,
                                   StreamKeyService streamKeyService,
-                                  MediaMtxClient mediaMtxClient) {
+                                  MediaMtxClient mediaMtxClient,
+                                  JwtTokenProvider tokens) {
         this.streamRepository = streamRepository;
         this.cameraRepository = cameraRepository;
         this.streamKeyService = streamKeyService;
         this.mediaMtxClient = mediaMtxClient;
+        this.tokens = tokens;
     }
 
     @PostMapping("/auth")
@@ -80,6 +84,11 @@ public class MediaMtxAuthController {
             }
 
             LiveStream stream = streamOpt.get();
+            if ("webrtc".equals(request.protocol())) {
+                boolean allowed = parts.length == 1 && "browser".equals(request.user())
+                        && tokens.allowsBrowserPublish(rawKey, path);
+                return allowed ? ResponseEntity.ok().build() : ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
             String keyHash = parts.length == 1 ? stream.getStreamKeyHash()
                     : cameraRepository.findByStreamIdAndId(stream.getId(), parts[1])
                             .map(StreamCamera::getStreamKeyHash).orElse(null);

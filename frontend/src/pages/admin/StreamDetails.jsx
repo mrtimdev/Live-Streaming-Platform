@@ -5,6 +5,7 @@ import { streamApi } from '../../api/streamApi';
 import ConfirmModal from '../../components/common/ConfirmModal';
 import CopyButton from '../../components/common/CopyButton';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
+import BrowserBroadcast from '../../components/stream/BrowserBroadcast';
 import CameraSettings from '../../components/stream/CameraSettings';
 import ObsConfigPanel from '../../components/stream/ObsConfigPanel';
 import StreamForm from '../../components/stream/StreamForm';
@@ -16,6 +17,7 @@ export default function StreamDetails() {
   const navigate = useNavigate();
 
   const [stream, setStream] = useState(null);
+  const [programLive, setProgramLive] = useState(false);
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -34,11 +36,13 @@ export default function StreamDetails() {
 
   const loadDetails = useCallback(async () => {
     try {
-      const [streamData, historyData] = await Promise.all([
+      const [streamData, historyData, views] = await Promise.all([
         streamApi.getAdminStream(id),
         streamApi.getStreamHistory(id),
+        streamApi.getViews(id),
       ]);
       setStream(streamData);
+      setProgramLive(views.program.live);
       setHistory(historyData || []);
       setError('');
     } catch (err) {
@@ -194,6 +198,7 @@ export default function StreamDetails() {
 
       {newCredentials && <ObsConfigPanel credentials={newCredentials} />}
 
+      <BrowserBroadcast key={`browser-${stream.streamId}`} streamId={stream.streamId} programLive={programLive} />
       <CameraSettings key={stream.streamId} streamId={stream.streamId} />
 
       <div className="grid gap-4 sm:grid-cols-3">
@@ -229,6 +234,14 @@ export default function StreamDetails() {
       <div className="rounded-xl border border-slate-800 bg-slate-900 p-6 space-y-4">
         <h2 className="text-base font-semibold text-white">Streaming Endpoints</h2>
         <div>
+          <label className="text-xs font-medium uppercase tracking-wider text-slate-400">Watch link</label>
+          <div className="mt-1.5 flex items-center justify-between gap-3 rounded-lg border border-slate-800 bg-slate-950 px-3.5 py-2.5">
+            <code className="break-all font-mono text-sm text-slate-200">{`${window.location.origin}/watch/${encodeURIComponent(stream.streamId)}`}</code>
+            <CopyButton value={`${window.location.origin}/watch/${encodeURIComponent(stream.streamId)}`} label="Copy watch link" />
+          </div>
+          <p className="mt-2 text-xs text-slate-400">Viewers do not need an account. Open this page using your public website address before copying a link for internet viewers. A localhost link only works on this Mac.</p>
+        </div>
+        <div>
           <label className="text-xs font-medium uppercase tracking-wider text-slate-400">
             OBS Server URL
           </label>
@@ -243,7 +256,7 @@ export default function StreamDetails() {
           </label>
           <div className="mt-1.5 flex items-center justify-between gap-3 rounded-lg border border-slate-800 bg-slate-950 px-3.5 py-2.5">
             <code className="truncate font-mono text-sm text-slate-200">{stream.hlsUrl}</code>
-            <CopyButton value={stream.hlsUrl} />
+            <CopyButton value={new URL(stream.hlsUrl, window.location.origin).href} />
           </div>
         </div>
         <p className="text-xs text-slate-400">

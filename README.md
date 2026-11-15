@@ -43,6 +43,40 @@ A self-hosted Live Streaming Platform built with **Spring Boot**, **React + Vite
 
 ---
 
+## Go live from your MacBook camera
+
+1. Stop any publisher using the broadcast's main feed.
+2. Open **Admin → Streams**, choose a broadcast, and click **Preview camera** under **Broadcast from this browser**.
+3. Allow camera access in Chrome and macOS if prompted. Check the preview, then click **Go live**.
+4. Open **Watch Page** to verify playback. Keep the broadcasting tab open and click **Stop broadcast** when finished. This mode publishes video only.
+
+The camera publishes to the existing main feed. Select **OBS program** in **Camera feeds** if the director's view is currently set to another live camera. Browser publishing uses H.264 over WebRTC. Use Chrome on `localhost` for local testing.
+
+For browser publishing from outside the server, serve the admin page over HTTPS. Set `MEDIAMTX_WEBRTC_HOST` to the server's reachable public hostname or IP and `MEDIAMTX_WEBRTC_BIND_IP=0.0.0.0`. Allow UDP port `8189` through the host firewall and forward it to the server if it is behind NAT. The WebRTC HTTP listener stays on the Docker network.
+
+## Share a temporary public watch link from this Mac
+
+The website and video use the same address. Keep `MEDIAMTX_HLS_PUBLIC_URL=/hls/live` in `.env`; do not use `localhost` or a private IP for an internet viewer's video URL.
+
+Start the optional viewer-only HTTPS tunnel:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.public.yml up -d --build backend frontend public-viewer public-tunnel
+docker compose -f docker-compose.yml -f docker-compose.public.yml logs public-tunnel
+```
+
+Find the `https://...trycloudflare.com` URL in the logs. Append `/watch/<streamId>` and share that URL. Viewers need no account. The public watch page also has **Copy watch link**. The admin page's copy button uses its current website address, so copying from localhost produces a local-only link.
+
+Keep publishing your MacBook camera from `http://localhost:3000/admin/streams/<streamId>`. The tunnel carries viewer traffic, not the camera's WebRTC UDP connection. Admin, login, publishing, and internal API routes are blocked at the public tunnel entry point. The public homepage lists live broadcasts; all published camera feeds are public.
+
+Stop public access without stopping the local app:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.public.yml stop public-tunnel public-viewer
+```
+
+Keep the Mac awake, Docker running, and the broadcaster tab open. The link changes when a new tunnel is created. Cloudflare Quick Tunnels are for testing, have no uptime guarantee, and allow at most 200 concurrent in-flight requests (not 200 viewers). For a permanent audience, use an always-on host and a stable domain with delivery capacity sized for the audience. See [Cloudflare Quick Tunnel limits](https://developers.cloudflare.com/tunnel/get-started/quick-tunnels/).
+
 ## OBS Studio Setup
 
 1. Log in to the Admin Console at `http://localhost:3000/login`.
@@ -109,7 +143,7 @@ Base path: `/api`
 1. Point your domain (e.g. `stream.example.com`) to your Linux VPS.
 2. Open firewall ports: `80/tcp`, `443/tcp`, and `1935/tcp` (RTMP). **Do not** expose `3306`, `6379`, or `9997`.
 3. Provision TLS certificates (e.g. Certbot / Let's Encrypt) and configure `nginx/nginx.conf`.
-4. Update `.env` with the public website URL, RTMP ingestion URL, and HTTPS HLS URL. For the included Nginx configuration, use `APP_PUBLIC_URL=https://stream.example.com`, `MEDIAMTX_RTMP_PUBLIC_URL=rtmp://stream.example.com/live`, and `MEDIAMTX_HLS_PUBLIC_URL=https://stream.example.com/hls/live`. Configure strong JWT, database, and admin credentials before exposing a new installation.
+4. Update `.env` with the public website URL, RTMP ingestion URL, and HTTPS HLS URL. For the included Nginx configuration, use `APP_PUBLIC_URL=https://stream.example.com`, `MEDIAMTX_RTMP_PUBLIC_URL=rtmp://stream.example.com/live`, and `MEDIAMTX_HLS_PUBLIC_URL=/hls/live`. Configure strong JWT, database, and admin credentials before exposing a new installation.
 5. Schedule `./scripts/backup.sh` via cron for automated MySQL backups.
 
 ---

@@ -169,6 +169,13 @@ class StreamPlatformIntegrationTest {
                         .content(publicReadAuth))
                 .andExpect(status().isOk());
 
+        // Anonymous viewers use the website origin for video, including over HTTPS.
+        mockMvc.perform(get("/api/public/streams/keynote-2026"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.hlsUrl").value("/hls/live/keynote-2026/index.m3u8"))
+                .andExpect(jsonPath("$.data.views.program.hlsUrl").value("/hls/live/keynote-2026/index.m3u8"))
+                .andExpect(jsonPath("$.data.streamKey").doesNotExist());
+
         // Viewer heartbeat works
         mockMvc.perform(post("/api/public/streams/keynote-2026/heartbeat")
                         .contentType(MediaType.APPLICATION_JSON)

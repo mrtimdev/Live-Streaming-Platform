@@ -1,6 +1,7 @@
 import { ArrowLeft, Clock, Eye, Radio } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
+import CopyButton from '../../components/common/CopyButton';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import StreamStatusBadge from '../../components/stream/StreamStatusBadge';
 import HlsPlayer from '../../components/video/HlsPlayer';
@@ -111,6 +112,7 @@ export default function WatchStream() {
               <span className="font-mono text-xs text-slate-500">{stream.streamId}</span>
             </div>
             <h1 className="mt-2.5 text-2xl font-bold text-white">{stream.title}</h1>
+            <div className="mt-3"><CopyButton value={window.location.href} label="Copy watch link" /></div>
             {stream.description && (
               <p className="mt-2 whitespace-pre-line text-sm text-slate-300">
                 {stream.description}

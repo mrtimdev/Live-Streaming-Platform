@@ -1,0 +1,20 @@
+services:
+  public-viewer:
+    image: nginx:1.27-alpine
+    volumes:
+      - ./nginx/public-viewer.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - livestream_internal
+    depends_on:
+      frontend:
+        condition: service_started
+      backend:
+        condition: service_healthy
+
+  public-tunnel:
+    image: cloudflare/cloudflared:latest
+    command: tunnel --no-autoupdate --url http://public-viewer:80
+    networks:
+      - livestream_internal
+    depends_on:
+      - public-viewer

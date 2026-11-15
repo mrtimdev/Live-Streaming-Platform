@@ -50,7 +50,7 @@ app:
   mediamtx:
     api-url: ${MEDIAMTX_API_URL:http://mediamtx:9997}
     rtmp-public-url: ${MEDIAMTX_RTMP_PUBLIC_URL:rtmp://localhost:1935/live}
-    hls-public-url: ${MEDIAMTX_HLS_PUBLIC_URL:http://localhost:8888/live}
+    hls-public-url: ${MEDIAMTX_HLS_PUBLIC_URL:/hls/live}
     monitor-interval-ms: 3000
     connect-timeout-ms: 2000
     read-timeout-ms: 3000
