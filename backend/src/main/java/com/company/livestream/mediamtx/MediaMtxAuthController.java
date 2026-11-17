@@ -70,8 +70,15 @@ public class MediaMtxAuthController {
 
         // Publishing requires valid streamId and streamKey
         if ("publish".equals(action)) {
-            String path = normalizePath(request.path());
-            String rawKey = extractSecret(request);
+            String rawPath = request.path() != null ? request.path().replace("%3F", "?").replace("%3f", "?") : "";
+            int queryIdx = rawPath.indexOf('?');
+            String pathOnly = queryIdx >= 0 ? rawPath.substring(0, queryIdx) : rawPath;
+            String embeddedQuery = queryIdx >= 0 ? rawPath.substring(queryIdx + 1) : "";
+            String path = normalizePath(pathOnly);
+            String combinedQuery = (request.query() != null && !request.query().isBlank())
+                    ? request.query()
+                    : embeddedQuery;
+            String rawKey = extractSecret(request, combinedQuery);
 
             if (path == null || rawKey == null) {
                 log.warn("Rejected publish with missing streamId or key: path={} ip={}", request.path(), request.ip());
@@ -134,21 +141,27 @@ public class MediaMtxAuthController {
         return normalized.isBlank() ? null : normalized;
     }
 
-    private String extractSecret(MediaMtxAuthRequest request) {
+    private String extractSecret(MediaMtxAuthRequest request, String query) {
         if (request.password() != null && !request.password().isBlank()) {
             return request.password();
         }
-        if (request.query() != null && !request.query().isBlank()) {
-            for (String param : request.query().split("&")) {
+        if (query != null && !query.isBlank()) {
+            for (String param : query.split("&")) {
                 String[] parts = param.split("=", 2);
                 if (parts.length == 2) {
                     String k = URLDecoder.decode(parts[0], StandardCharsets.UTF_8);
                     String v = URLDecoder.decode(parts[1], StandardCharsets.UTF_8);
-                    if (("pass".equals(k) || "key".equals(k) || "password".equals(k)) && !v.isBlank()) {
+                    if (("pass".equals(k) || "key".equals(k) || "password".equals(k) || "token".equals(k) || "secret".equals(k))
+                            && !v.isBlank()) {
                         return v;
                     }
                 }
             }
+        }
+        if (request.user() != null && !request.user().isBlank()
+                && !"publisher".equalsIgnoreCase(request.user())
+                && !"browser".equalsIgnoreCase(request.user())) {
+            return request.user();
         }
         return null;
     }

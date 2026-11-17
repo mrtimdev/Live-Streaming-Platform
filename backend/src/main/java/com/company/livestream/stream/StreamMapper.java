@@ -1,7 +1,12 @@
 package com.company.livestream.stream;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+
+import java.net.URI;
 
 @Component
 public class StreamMapper {
@@ -25,7 +30,7 @@ public class StreamMapper {
                 stream.getStartedAt(),
                 stream.getEndedAt(),
                 viewerCount,
-                normalizeBase(rtmpPublicUrl),
+                getRtmpPublicUrl(),
                 buildHlsUrl(stream.getStreamId()),
                 stream.getScheduledStartAt()
         );
@@ -66,7 +71,33 @@ public class StreamMapper {
     }
 
     public String getRtmpPublicUrl() {
-        return normalizeBase(rtmpPublicUrl);
+        String base = normalizeBase(rtmpPublicUrl);
+        try {
+            URI uri = URI.create(base);
+            String configuredHost = uri.getHost();
+            if ("localhost".equalsIgnoreCase(configuredHost) || "127.0.0.1".equals(configuredHost)) {
+                String requestHost = currentRequestHost();
+                if (requestHost != null && !requestHost.isBlank()
+                        && !"localhost".equalsIgnoreCase(requestHost)
+                        && !"127.0.0.1".equals(requestHost)) {
+                    int port = uri.getPort();
+                    String portPart = port > 0 ? ":" + port : "";
+                    String pathPart = uri.getRawPath() != null ? uri.getRawPath() : "";
+                    return uri.getScheme() + "://" + requestHost + portPart + pathPart;
+                }
+            }
+        } catch (Exception ignored) {
+            // Fall back to configured RTMP URL
+        }
+        return base;
+    }
+
+    private String currentRequestHost() {
+        if (RequestContextHolder.getRequestAttributes() instanceof ServletRequestAttributes attrs) {
+            HttpServletRequest request = attrs.getRequest();
+            return request.getServerName();
+        }
+        return null;
     }
 
     private String normalizeBase(String url) {

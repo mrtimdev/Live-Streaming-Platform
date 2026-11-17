@@ -237,34 +237,54 @@ export default function StreamDetails() {
         </div>
       </div>
 
-      <div className="rounded-xl border border-slate-800 bg-slate-900 p-6 space-y-4">
+        <div className="rounded-xl border border-slate-800 bg-slate-900 p-6 space-y-4">
         <h2 className="text-base font-semibold text-white">Streaming Endpoints</h2>
-        <div>
-          <label className="text-xs font-medium uppercase tracking-wider text-slate-400">Watch link</label>
-          <div className="mt-1.5 flex items-center justify-between gap-3 rounded-lg border border-slate-800 bg-slate-950 px-3.5 py-2.5">
-            <code className="break-all font-mono text-sm text-slate-200">{`${window.location.origin}/watch/${encodeURIComponent(stream.streamId)}`}</code>
-            <CopyButton value={`${window.location.origin}/watch/${encodeURIComponent(stream.streamId)}`} label="Copy watch link" />
-          </div>
-          <p className="mt-2 text-xs text-slate-400">Viewers do not need an account. Open this page using your public website address before copying a link for internet viewers. A localhost link only works on this Mac.</p>
-        </div>
-        <div>
-          <label className="text-xs font-medium uppercase tracking-wider text-slate-400">
-            OBS Server URL
-          </label>
-          <div className="mt-1.5 flex items-center justify-between gap-3 rounded-lg border border-slate-800 bg-slate-950 px-3.5 py-2.5">
-            <code className="truncate font-mono text-sm text-slate-200">{stream.rtmpUrl}</code>
-            <CopyButton value={stream.rtmpUrl} />
-          </div>
-        </div>
-        <div>
-          <label className="text-xs font-medium uppercase tracking-wider text-slate-400">
-            HLS Playback URL
-          </label>
-          <div className="mt-1.5 flex items-center justify-between gap-3 rounded-lg border border-slate-800 bg-slate-950 px-3.5 py-2.5">
-            <code className="truncate font-mono text-sm text-slate-200">{stream.hlsUrl}</code>
-            <CopyButton value={new URL(stream.hlsUrl, window.location.origin).href} />
-          </div>
-        </div>
+        {(() => {
+          let shareOrigin = window.location.origin;
+          if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            try {
+              const rtmpHost = new URL(stream.rtmpUrl).hostname;
+              if (rtmpHost && rtmpHost !== 'localhost' && rtmpHost !== '127.0.0.1') {
+                const port = window.location.port ? `:${window.location.port}` : '';
+                shareOrigin = `${window.location.protocol}//${rtmpHost}${port}`;
+              }
+            } catch {
+              // Keep window.location.origin
+            }
+          }
+          const watchUrl = `${shareOrigin}/watch/${encodeURIComponent(stream.streamId)}`;
+          const hlsFullUrl = new URL(stream.hlsUrl, shareOrigin).href;
+          return (
+            <>
+              <div>
+                <label className="text-xs font-medium uppercase tracking-wider text-slate-400">Watch link</label>
+                <div className="mt-1.5 flex items-center justify-between gap-3 rounded-lg border border-slate-800 bg-slate-950 px-3.5 py-2.5">
+                  <code className="break-all font-mono text-sm text-slate-200">{watchUrl}</code>
+                  <CopyButton value={watchUrl} label="Copy watch link" />
+                </div>
+                <p className="mt-2 text-xs text-slate-400">Viewers do not need an account. Open this page using your public website address before copying a link for internet viewers. A localhost link only works on this Mac.</p>
+              </div>
+              <div>
+                <label className="text-xs font-medium uppercase tracking-wider text-slate-400">
+                  OBS Server URL
+                </label>
+                <div className="mt-1.5 flex items-center justify-between gap-3 rounded-lg border border-slate-800 bg-slate-950 px-3.5 py-2.5">
+                  <code className="truncate font-mono text-sm text-slate-200">{stream.rtmpUrl}</code>
+                  <CopyButton value={stream.rtmpUrl} />
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-medium uppercase tracking-wider text-slate-400">
+                  HLS Playback URL
+                </label>
+                <div className="mt-1.5 flex items-center justify-between gap-3 rounded-lg border border-slate-800 bg-slate-950 px-3.5 py-2.5">
+                  <code className="truncate font-mono text-sm text-slate-200">{stream.hlsUrl}</code>
+                  <CopyButton value={hlsFullUrl} />
+                </div>
+              </div>
+            </>
+          );
+        })()}
         <p className="text-xs text-slate-400">
           Stream key secrets are hashed and never stored in plaintext. Use <strong>Regenerate Key</strong> above if you need a new OBS Stream Key.
         </p>
